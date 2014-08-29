@@ -10,14 +10,16 @@ import Spark (..)
 import World (..)
 
 main : Signal Element
---main = tempRender <~ rolls
-main = testRender <~ state ~ Window.dimensions ~ rolls
+main = render <~ state ~ Window.dimensions
 
 initialState : GameState
-initialState = { elt = newElt spark, encounter = { location = "wherever", entity = goblin } }
+initialState = { elt = newElt spark, encounter = { location = "wherever", entity = goblin }, log = Nothing }
 
 testRender : GameState -> (Int, Int) -> Rolls -> Element
 testRender gs xy r = asText r `above` render gs xy
+
+rollRender : Rolls -> Element
+rollRender rolls = asText rolls `above` flow right [attackButton, fleeButton, befriendButton, ignoreButton]
 
 action : Signal Action
 action = merges [attack.signal, flee.signal, befriend.signal, ignore.signal]

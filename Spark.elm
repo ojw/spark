@@ -7,6 +7,8 @@ import Maybe
 
 import Option (..)
 
+type Log = { action : Action, reaction : Action, event : Event, outcome : Outcome, effects : [Effect] }
+
 -- Energy Costs: -2, -1, +1, +2?
 data Action = Attack | Flee | Befriend | Ignore
 data Event = Fight | YouFlee | TheyFlee | EventIgnore | Friendship
@@ -16,12 +18,10 @@ data Outcome = Victory | Defeat | Gift | Nada
 type Mood = { name : String, aggression : Int, friendliness : Int, fear : Int, neutrality : Int, perception : Int }
 
 type Item = String
-
 type Inventory = [Item]
 
 -- Stats: -1 fight, -1 perceive, +2 befriend, +2 flee; +2 fight, -1 befriend, -1 perceive; +1 fight, +1 flee; +2 perceive, +1 befriend?
 data LifeCycle = Child | Adolescent | Adult | Elderly
-
 type Form = { name : String, offense : Int, defense : Int, charm : Int, perception : Int }
 
 type EltType = { name : String,
@@ -82,7 +82,7 @@ type Location = String
 
 type Encounter = { entity : Entity, location : Location }
 
-type GameState = { elt : Elt, encounter : Encounter }
+type GameState = { elt : Elt, encounter : Encounter, log : Maybe Log }
 
 
 energyCost : Action -> Int
@@ -172,6 +172,7 @@ rollEffects {elt, encounter} outcome =
                  Victory -> entity.defeat
                  Defeat -> entity.victory
                  Gift -> entity.gift
+                 Nada -> []
     in
       pickWithDefault [] opts
 
@@ -199,4 +200,4 @@ tick (action, rolls, enc) game =
         effects = rollEffects game outcome rolls.effects
         state = processEffects effects game
     in
-      { state | encounter <- enc }
+      { state | encounter <- enc, log <- Just { action=action, reaction=reaction, event=event, outcome=outcome, effects=effects } }

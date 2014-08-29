@@ -66,9 +66,9 @@ goblin = { name = "goblin",
            fear = 1,
            offense = 3,
            defense = 1,
-           gift = [],
-           victory = [],
-           defeat = [(1, [Damage 1])]
+           gift = [(1, [GetItem "some gross ball of lint"])],
+           victory = [(1, [Damage 1])],
+           defeat = []
          }
 
 entities : Option Entity
