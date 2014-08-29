@@ -4,47 +4,55 @@ import Graphics.Input (..)
 import Window
 
 import Spark (..)
+import World (..)
 
-main : Signal Element
-main = lift2 (render "You are a spark.") command Window.dimensions
 
-state : Signal EltState
-state = foldp update (initialElt spark) command
+render : GameState -> (Int, Int) -> Element
+render {elt, encounter} (x,y) = container x y middle <|
+    flow down [renderElt elt, 
+               renderLocation encounter.location,
+               renderEntity encounter.entity,
+               flow right [attackButton, fleeButton, befriendButton, ignoreButton]
+              ]
 
-command : Signal Command
-command = merges [fight.signal, flee.signal, befriend.signal, ignore.signal]
+renderElt : Elt -> Element
+renderElt elt = flow down [plainText ("You are a " ++ (form elt).name ++ "."),
+                           plainText ("You feel " ++ elt.mood.name ++ ".")]
 
-commandButton : Handle Command -> Command -> String -> Element
-commandButton h c s = button h c s |> color yellow
+renderLocation : Location -> Element
+renderLocation loc = plainText ("You are " ++ loc)
 
-renderElt : EltState -> Element
-renderElt e = plainText ("You are a " ++ e.elt.defName)
+renderEntity : Entity -> Element
+renderEntity ent = flow down [plainText ("You see a " ++ ent.name ++ "."),
+                              plainText ("It looks " ++ ent.mood.name ++ ".")]
 
-render : String -> Command -> (Int, Int) -> Element
-render s c (x,y) = container x y middle <| (plainText s `above` asText c `above` flow right [fightButton, fleeButton, befriendButton, ignoreButton])
+
 
 {- UI Elements -}
 
-fight : Input Command
-fight = input Fight
+actionButton : Handle Action -> Action -> String -> Element
+actionButton h c s = button h c s |> color yellow
 
-fightButton : Element
-fightButton = commandButton fight.handle Fight "Fight"
+attack : Input Action
+attack = input Attack
 
-flee : Input Command
+attackButton : Element
+attackButton = actionButton attack.handle Attack "Attack"
+
+flee : Input Action
 flee = input Flee
 
 fleeButton : Element
-fleeButton = commandButton flee.handle Flee "Flee"
+fleeButton = actionButton flee.handle Flee "Flee"
 
-befriend : Input Command
+befriend : Input Action
 befriend = input Befriend
 
 befriendButton : Element
-befriendButton = commandButton befriend.handle Befriend "Befriend"
+befriendButton = actionButton befriend.handle Befriend "Befriend"
 
-ignore : Input Command
+ignore : Input Action
 ignore = input Ignore
 
 ignoreButton : Element
-ignoreButton = commandButton ignore.handle Ignore "Ignore"
+ignoreButton = actionButton ignore.handle Ignore "Ignore"
