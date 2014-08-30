@@ -7,7 +7,7 @@ import Maybe
 
 import Option (..)
 
-type Log = { action : Action, reaction : Action, event : Event, outcome : Outcome, effects : [Effect] }
+type Log = { action : Action, reaction : Action, event : Event, outcome : Outcome, effects : [Effect], encounter : Encounter }
 
 -- Energy Costs: -2, -1, +1, +2?
 data Action = Attack | Flee | Befriend | Ignore
@@ -200,4 +200,4 @@ tick (action, rolls, enc) game =
         effects = rollEffects game outcome rolls.effects
         state = processEffects effects game
     in
-      { state | encounter <- enc, log <- Just { action=action, reaction=reaction, event=event, outcome=outcome, effects=effects } }
+      { state | encounter <- enc, log <- Just { action=action, reaction=reaction, event=event, outcome=outcome, effects=effects,encounter=game.encounter } }

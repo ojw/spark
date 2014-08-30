@@ -47,6 +47,12 @@ newElt eltType = { elt = eltType,
 neutral : Mood
 neutral = { name = "neutral", aggression = 0, friendliness = 0, fear = 0, neutrality = 0, perception = 0 }
 
+surly : Mood
+surly = { name = "surly", aggression = 1, friendliness = 0, fear = 1, neutrality = 0, perception = 0 }
+
+friendly : Mood
+friendly = { name = "friendly", aggression = 0, friendliness = 2, fear = 0, neutrality = 0, perception = 0 }
+
 baseEntity : Entity
 baseEntity = { name = "a vague blob", mood = neutral, deception = 0, deceptiveMood = Nothing, inventory = [],
                aggression = 0, friendliness = 1, neutrality = 0, fear = 0,
@@ -56,23 +62,40 @@ baseEntity = { name = "a vague blob", mood = neutral, deception = 0, deceptiveMo
 
 goblin : Entity
 goblin = { name = "goblin",
-           mood = { name = "surly", aggression = 1, friendliness = 0, fear = 1, neutrality = 0, perception = 0 },
+           mood = surly,
            deception = 0,
            deceptiveMood = Nothing,
            inventory = [],
-           aggression = 3,
+           aggression = 2,
            friendliness = 0,
            neutrality = 1,
            fear = 1,
-           offense = 3,
+           offense = 2,
            defense = 1,
            gift = [(1, [GetItem "some gross ball of lint"])],
            victory = [(1, [Damage 1])],
            defeat = []
          }
 
+elf : Entity
+elf = { name = "elf",
+        mood = friendly,
+        deception = 0,
+        deceptiveMood = Nothing,
+        inventory = [],
+        aggression = 1,
+        friendliness = 2,
+        neutrality = 1,
+        fear = 1,
+        offense = 1,
+        defense = 1,
+        gift = [(1, [Healing 1])],
+        victory = [(1, [Damage 1])],
+        defeat = []
+      }
+
 entities : Option Entity
-entities = normalizeOption [(1, goblin)]
+entities = normalizeOption [(1, goblin), (1, elf)]
                   
 
 healthWords : Dict.Dict Int String

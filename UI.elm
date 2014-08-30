@@ -18,7 +18,8 @@ render game (x,y) = container x y midTop <|
 
 renderElt : Elt -> Element
 renderElt elt = flow down [plainText ("You are a " ++ (form elt).name ++ "."),
-                           plainText ("You feel " ++ elt.mood.name ++ ".")]
+                           plainText ("You feel " ++ elt.mood.name ++ "."),
+                           plainText ("Health: " ++ show elt.health)]
 
 renderLocation : Location -> Element
 renderLocation loc = plainText ("You are " ++ loc)
@@ -27,16 +28,16 @@ renderEntity : Entity -> Element
 renderEntity ent = flow down [plainText ("You see a " ++ ent.name ++ "."),
                               plainText ("It looks " ++ ent.mood.name ++ ".")]
 
-renderAction : Action -> GameState -> Element
-renderAction action game = let entity = game.encounter.entity.name in
+renderAction : Action -> Encounter -> Element
+renderAction action encounter = let entity = encounter.entity.name in
                            case action of
                              Attack -> plainText ("You attack the " ++ entity ++ "!")
                              Flee -> plainText ("You run away from the " ++ entity ++ "!")
                              Befriend -> plainText ("You try befriending the " ++ entity ++ ".")
                              Ignore -> plainText ("You play it cool.")
 
-renderReaction : Action -> Action -> GameState -> Element
-renderReaction action reaction game =let entity = game.encounter.entity.name in
+renderReaction : Action -> Action -> Encounter -> Element
+renderReaction action reaction encounter =let entity = encounter.entity.name in
                                      case (action, reaction) of
                                        (Attack, Attack) -> plainText ("The " ++ entity ++ " charges back at you!")
                                        (Attack, Flee) -> plainText ("The " ++ entity ++ " turns and tries to run!")
@@ -55,25 +56,28 @@ renderReaction action reaction game =let entity = game.encounter.entity.name in
                                        (Ignore, Befriend) -> plainText ("The " ++ entity ++ " comes over and is friendly.")
                                        (Ignore, Ignore) -> plainText ("You and the " ++ entity ++ " just ignore each other.")
 
-renderEvent : Event -> GameState -> Element
-renderEvent event game = let entity = game.encounter.entity.name in
+renderEvent : Action -> Action -> Event -> Encounter -> Element
+renderEvent action reaction event encounter = let entity = encounter.entity.name in
                          case event of
-                           Fight -> plainText "You fight!"
+                           Fight -> case (action, reaction) of 
+                                      (Attack, Flee) -> plainText ("You catch the fleeing " ++ entity ++ ".  You fight!")
+                                      (Flee, Attack) -> plainText ("The " ++ entity ++ " catches you!  It attacks!")
+                                      _ -> plainText "You fight!"
                            YouFlee -> plainText "You get away safely."
                            TheyFlee -> plainText ("The " ++ entity ++ " gets away!")
                            EventIgnore -> plainText "Nothing really happens."
                            Friendship -> plainText ("You and the " ++ entity ++ " become pals!")
 
-renderOutcome : Outcome -> GameState -> Element
-renderOutcome outcome game = let entity = game.encounter.entity.name in
+renderOutcome : Outcome -> Encounter -> Element
+renderOutcome outcome encounter = let entity = encounter.entity.name in
                              case outcome of
                                Victory -> plainText ("You defeat the " ++ entity ++ "!")
                                Defeat -> plainText ("The " ++ entity ++ " puts a beatdown on you!")
                                Gift -> plainText ("The " ++ entity ++ " gives you a gift!")
                                Nada -> plainText ("Nothing happens at all.")
 
-renderEffect : GameState -> Effect -> Element
-renderEffect game effect = let entity = game.encounter.entity.name in
+renderEffect : Encounter -> Effect -> Element
+renderEffect encounter effect = let entity = encounter.entity.name in
                            case effect of
                              Damage i -> plainText ("You take " ++ show i ++ " damage.")
                              Healing i -> plainText ("You are healed by " ++ show i ++ ".")
@@ -83,10 +87,10 @@ renderEffect game effect = let entity = game.encounter.entity.name in
 renderLogs : GameState -> Element
 renderLogs game = case game.log of
                     Nothing -> plainText "You know nothing of the world."
-                    Just log -> flow down <| [ renderAction log.action game,
-                                               renderReaction log.action log.reaction game,
-                                               renderEvent log.event game,
-                                               renderOutcome log.outcome game ] ++ map (renderEffect game) log.effects
+                    Just log -> flow down <| [ renderAction log.action log.encounter,
+                                               renderReaction log.action log.reaction log.encounter,
+                                               renderEvent log.action log.reaction log.event log.encounter,
+                                               renderOutcome log.outcome log.encounter ] ++ map (renderEffect log.encounter) log.effects
 
 {- UI Elements -}
 
