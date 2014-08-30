@@ -10,7 +10,10 @@ import Spark (..)
 import World (..)
 
 main : Signal Element
-main = render <~ state ~ Window.dimensions
+main = render' <~ state ~ Window.dimensions
+
+render' : GameState -> (Int,Int) -> Element
+render' game window = if over game then plainText "You died." else render game window
 
 initialState : GameState
 initialState = { elt = newElt spark, encounter = { location = "wherever", entity = goblin }, log = Nothing }
@@ -41,3 +44,4 @@ are = (\ a r e -> (a,r,e)) <~ action ~ rolls ~ encounter
 
 state : Signal GameState
 state = foldp tick initialState are
+

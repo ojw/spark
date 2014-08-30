@@ -201,3 +201,6 @@ tick (action, rolls, enc) game =
         state = processEffects effects game
     in
       { state | encounter <- enc, log <- Just { action=action, reaction=reaction, event=event, outcome=outcome, effects=effects,encounter=game.encounter } }
+
+over : GameState -> Bool
+over game = game.elt.health == 0
