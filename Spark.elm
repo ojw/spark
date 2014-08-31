@@ -7,7 +7,7 @@ import Maybe
 
 import Option (..)
 
-type Log = { action : Action, reaction : Action, event : Event, outcome : Outcome, effects : [Effect], encounter : Encounter }
+type Log = { action : Action, reaction : Action, event : Event, outcome : Outcome, effects : [Effect], encounter : Encounter, advance : Bool }
 
 -- Energy Costs: -2, -1, +1, +2?
 data Action = Attack | Flee | Befriend | Ignore
@@ -22,7 +22,7 @@ type Inventory = [Item]
 
 -- Stats: -1 fight, -1 perceive, +2 befriend, +2 flee; +2 fight, -1 befriend, -1 perceive; +1 fight, +1 flee; +2 perceive, +1 befriend?
 data LifeCycle = Child | Adolescent | Adult | Elderly
-type Form = { name : String, offense : Int, defense : Int, charm : Int, perception : Int }
+type Form = { name : String, offense : Int, defense : Int, charm : Int, perception : Int, advance : Option Bool }
 
 type EltType = { name : String,
                  childForm : Form,
@@ -36,7 +36,7 @@ type Elt = { elt : EltType,
              inventory : Inventory, 
              health : Int, 
              energy : Int,
-             mood : Mood                  
+             mood : Mood
            }
 
 form : Elt -> Form
@@ -47,13 +47,26 @@ form elt = case elt.level of
              Elderly -> elt.elt.elderlyForm
 
 offense : Elt -> Int
-offense elt = (form elt).offense
+offense elt = (form elt).offense + elt.mood.aggression
 
 defense : Elt -> Int
-defense elt = (form elt).defense
+defense elt = (form elt).defense + elt.mood.fear
 
 charm : Elt -> Int
-charm elt = (form elt).charm
+charm elt = (form elt).charm + elt.mood.friendliness
+
+perception : Elt -> Int
+perception elt = (form elt).perception + elt.mood.perception
+
+setMood : Mood -> Elt -> Elt
+setMood mood elt = { elt | mood <- mood }
+
+nextLevel : Elt -> LifeCycle
+nextLevel elt = case elt.level of
+                  Child -> Adolescent
+                  Adolescent -> Adult
+                  Adult -> Elderly
+                  Elderly -> Elderly
 
 type Entity =
     { name : String,
@@ -77,6 +90,18 @@ type Entity =
       defeat : Option [Effect]
 
     }
+
+aggression : Entity -> Int
+aggression entity = entity.aggression + entity.mood.aggression
+
+friendliness : Entity -> Int
+friendliness entity = entity.friendliness + entity.mood.friendliness
+
+neutrality : Entity -> Int
+neutrality entity = entity.neutrality + entity.mood.neutrality
+
+fear : Entity -> Int
+fear entity = entity.neutrality + entity.mood.neutrality
 
 type Location = String
 
@@ -129,10 +154,10 @@ rollReaction : GameState -> Action -> Choice -> Action
 rollReaction {elt, encounter} command = 
     let entity = encounter.entity
         opt = intOption <| case command of
-                             Attack -> [(entity.fear + entity.friendliness, Flee), (entity.aggression + entity.neutrality, Attack)]
-                             Flee -> [(entity.aggression, Attack), (entity.fear + entity.neutrality + entity.friendliness, Ignore)]
-                             Befriend -> [(entity.aggression, Attack), (entity.fear + entity.neutrality, Ignore), (entity.friendliness, Befriend)]
-                             Ignore -> [(entity.aggression, Attack), (entity.neutrality + entity.fear, Ignore), (entity.friendliness, Befriend)]
+                             Attack -> [(fear entity, Flee), (aggression entity, Attack), (neutrality entity, Ignore)]
+                             Flee -> [(aggression entity, Attack), (fear entity + neutrality entity + friendliness entity, Ignore)]
+                             Befriend -> [(aggression entity, Attack), (fear entity + neutrality entity, Ignore), (friendliness entity, Befriend)]
+                             Ignore -> [(aggression entity, Attack), (neutrality entity + fear entity + friendliness entity, Ignore)]
     in
       pickWithDefault Ignore opt
 
@@ -150,7 +175,7 @@ rollEvent {elt, encounter} command action choice =
       (Befriend, Flee) -> TheyFlee
       (Ignore, Attack) -> Fight
       (Ignore, Flee) -> TheyFlee
-      (Ignore, Befriend) -> Friendship
+      (Ignore, Befriend) -> EventIgnore
       (Ignore, Ignore) -> EventIgnore
 
 rollOutcome : GameState -> Event -> Choice -> Outcome
@@ -187,20 +212,23 @@ processEffect event game =
 processEffects : [Effect] -> GameState -> GameState
 processEffects = flip (foldr processEffect)
 
-type Rolls = { reaction : Choice, event : Choice, outcome : Choice, effects : Choice }
+type Rolls = { reaction : Choice, event : Choice, outcome : Choice, effects : Choice, lifeCycle : Choice}
 
-makeRolls : Float -> Float -> Float -> Float -> Rolls
-makeRolls f1 f2 f3 f4 = { reaction = f1, event = f2, outcome = f3, effects = f4 }
+makeRolls : Float -> Float -> Float -> Float -> Float -> Rolls
+makeRolls f1 f2 f3 f4 f5 = { reaction = f1, event = f2, outcome = f3, effects = f4, lifeCycle = f5 }
 
-tick : (Action, Rolls, Encounter) -> GameState -> GameState
-tick (action, rolls, enc) game =
+tick : (Action, Rolls, Encounter, Mood) -> GameState -> GameState
+tick (action, rolls, enc, mood) game =
     let reaction = rollReaction game action rolls.reaction
         event = rollEvent game action reaction rolls.event
         outcome = rollOutcome game event rolls.outcome
         effects = rollEffects game outcome rolls.effects
         state = processEffects effects game
+        elt = state.elt
+        advance = pickWithDefault False (form elt).advance rolls.lifeCycle
+        elt' = if advance then { elt | level <- nextLevel elt } else elt
     in
-      { state | encounter <- enc, log <- Just { action=action, reaction=reaction, event=event, outcome=outcome, effects=effects,encounter=game.encounter } }
+      { state | elt <- setMood mood elt', encounter <- enc, log <- Just { action=action, reaction=reaction, event=event, outcome=outcome, effects=effects,encounter=game.encounter, advance=False } }
 
 over : GameState -> Bool
 over game = game.elt.health == 0

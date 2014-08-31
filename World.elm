@@ -25,14 +25,14 @@ energyWords = Dict.fromList [(1, "Exhausted"),
                              (7, "Energetic"),
                              (8, "Energetic"),
                              (9, "Manic"),
-                             (10, "Manic") ]
+                             (10, "Manic")]
 
 spark : EltType
 spark = { name = "spark",
-          childForm      = { name = "spark", offense = 2, defense = 3, charm = 4, perception = 3 },
-          adolescentForm = { name = "flame", offense = 4, defense = 3, charm = 1, perception = 2 },
-          adultForm      = { name = "fire",  offense = 3, defense = 2, charm = 2, perception = 3 },
-          elderlyForm    = { name = "ember", offense = 2, defense = 2, charm = 2, perception = 3 }
+          childForm      = { name = "spark", offense = 2, defense = 3, charm = 4, perception = 3, advance = normalizeOption [(1, True), (100, False)] },
+          adolescentForm = { name = "flame", offense = 4, defense = 3, charm = 1, perception = 2, advance = normalizeOption [(1, True), (200, False)] },
+          adultForm      = { name = "fire",  offense = 3, defense = 2, charm = 2, perception = 3, advance = normalizeOption [(1, True), (500, False)] },
+          elderlyForm    = { name = "ember", offense = 2, defense = 2, charm = 2, perception = 3, advance = normalizeOption [(1, True)] }
         }
 
 newElt : EltType -> Elt
@@ -53,12 +53,31 @@ surly = { name = "surly", aggression = 1, friendliness = 0, fear = 1, neutrality
 friendly : Mood
 friendly = { name = "friendly", aggression = 0, friendliness = 2, fear = 0, neutrality = 0, perception = 0 }
 
+moods = normalizeOption [(1,neutral), (1,surly), (1, friendly)]
+
 baseEntity : Entity
 baseEntity = { name = "a vague blob", mood = neutral, deception = 0, deceptiveMood = Nothing, inventory = [],
                aggression = 0, friendliness = 1, neutrality = 0, fear = 0,
                offense = 1, defense = 1,
                gift = [], victory = [], defeat = []
              }
+
+worm : Entity
+worm = { name = "worm",
+         mood = neutral,
+         deception = 0,
+         deceptiveMood = Nothing,
+         inventory = [],
+         aggression = 2,
+         friendliness = 0,
+         neutrality = 3,
+         fear = 0,
+         offense = 1,
+         defense = 0,
+         gift = [],
+         victory = [(1, [Damage 1])],
+         defeat = []
+       }
 
 goblin : Entity
 goblin = { name = "goblin",
@@ -84,7 +103,7 @@ elf = { name = "elf",
         deceptiveMood = Nothing,
         inventory = [],
         aggression = 1,
-        friendliness = 2,
+        friendliness = 4,
         neutrality = 1,
         fear = 1,
         offense = 1,
@@ -95,8 +114,8 @@ elf = { name = "elf",
       }
 
 entities : Option Entity
-entities = normalizeOption [(1, goblin), (1, elf)]
+entities = normalizeOption [(1, goblin), (1, elf), (1,worm)]
                   
 
 healthWords : Dict.Dict Int String
-healthWords = Dict.fromList <| List.zip [1..11] ["approaching death", "horribly mangled", "severely wounded", "badly hurt", "hurt", "banged up", "a little bruised", "okay", "just fine", "quite healthy"]
+healthWords = Dict.fromList <| List.zip [0..11] ["dead", "approaching death", "horribly mangled", "severely wounded", "badly hurt", "hurt", "banged up", "a little bruised", "okay", "just fine", "quite healthy"]

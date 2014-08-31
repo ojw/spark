@@ -28,7 +28,7 @@ action : Signal Action
 action = merges [attack.signal, flee.signal, befriend.signal, ignore.signal]
 
 rolls : Signal Rolls
-rolls = makeRolls <~ Random.float action ~ Random.float action ~ Random.float action ~ Random.float action
+rolls = makeRolls <~ Random.float action ~ Random.float action ~ Random.float action ~ Random.float action ~ Random.float action
 
 location : Signal Location
 location = pickWithDefault "nowhere" locations <~ Random.float action
@@ -36,11 +36,20 @@ location = pickWithDefault "nowhere" locations <~ Random.float action
 entity : Signal Entity
 entity = pickWithDefault goblin entities <~ Random.float action
 
-encounter : Signal Encounter
-encounter = (\ent loc -> { entity = ent, location = loc }) <~ entity ~ location
+setEntityMood : Mood -> Entity -> Entity
+setEntityMood mood entity = { entity | mood <- mood }
 
-are : Signal (Action, Rolls, Encounter)
-are = (\ a r e -> (a,r,e)) <~ action ~ rolls ~ encounter
+entityMood : Signal Mood
+entityMood = pickWithDefault neutral moods <~ Random.float action
+
+eltMood : Signal Mood
+eltMood = pickWithDefault neutral moods <~ Random.float action
+
+encounter : Signal Encounter
+encounter = (\ent loc -> { entity = ent, location = loc }) <~ lift2 setEntityMood entityMood entity ~ location
+
+are : Signal (Action, Rolls, Encounter, Mood)
+are = (\ a r e m -> (a,r,e,m)) <~ action ~ rolls ~ encounter ~ eltMood
 
 state : Signal GameState
 state = foldp tick initialState are
